@@ -262,7 +262,9 @@ Pies.prototype = {
 
         var fixedDeg = Math.asin( this.options.ringLineWidth / 4 / radius ) * 2;
 
-        var endDeg = Math.PI * (2 * this.data.count / this.data.total - .5 ) +(this.data.count == this.data.total? fixedDeg: (-1 * fixedDeg));
+        var percent = this.data.count / this.data.total;
+
+        var endDeg = Math.PI * (2 * percent - .5 ) +(this.data.count == this.data.total? fixedDeg: (-1 * fixedDeg));
 
         var startDeg = -Math.PI /2 + fixedDeg;
 
@@ -294,7 +296,7 @@ Pies.prototype = {
             this.context.arc(radius,radius,radius - this.options.ringLineWidth,0,Math.PI*2);
             this.context.fill();
 
-        }, 500, this);
+        }, Math.ceil(500 * percent), this);
 
         
 
