@@ -260,9 +260,13 @@ Pies.prototype = {
             pat = this.context.createPattern(cvs,"repeat");
         }
 
-        var endDeg = Math.PI * (2 * this.data.count / this.data.total - .5);
+        var fixedDeg = Math.asin( this.options.ringLineWidth / 4 / radius ) * 2;
 
-        var nowEndDeg = -Math.PI /2;
+        var endDeg = Math.PI * (2 * this.data.count / this.data.total - .5 ) +(this.data.count == this.data.total? fixedDeg: (-1 * fixedDeg));
+
+        var startDeg = -Math.PI /2 + fixedDeg;
+
+        var nowEndDeg = startDeg;
 
         var that = this;
 
@@ -280,7 +284,7 @@ Pies.prototype = {
 
             this.context.fillStyle = pat;
             this.context.beginPath();
-            this.drawSector(-Math.PI /2 , nowEndDeg);
+            this.drawSector(startDeg , nowEndDeg);
             this.context.fill();
 
 
