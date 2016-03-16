@@ -281,13 +281,28 @@ Pies.prototype = {
 
         var percent = this.data.count / this.data.total;
 
-        var endDeg = Math.PI * (2 * percent - .5 ) +(this.data.count == this.data.total? fixedDeg: (-1 * fixedDeg));
+        var endDeg = Math.PI * (2 * percent - .5 );
 
-        var startDeg = -Math.PI /2 + fixedDeg;
+        var startDeg = -Math.PI /2;
 
         var nowEndDeg = startDeg;
 
         var that = this;
+
+
+        if(this.data.count > 0){
+
+            if( endDeg - startDeg > fixedDeg ){
+                startDeg += fixedDeg;
+
+                if(endDeg - startDeg > fixedDeg) {
+                    endDeg += (this.data.count == this.data.total? fixedDeg: (-1 * fixedDeg));
+                }
+
+                nowEndDeg = startDeg;
+            }
+            
+        }
 
 
         this.animationLoop(function(easeDecimal,stepDecimal, currentStep ){
@@ -313,7 +328,7 @@ Pies.prototype = {
             this.context.arc(radius,radius,radius - this.options.ringLineWidth,0,Math.PI*2);
             this.context.fill();
 
-        }, Math.ceil(500 * percent), this);
+        }, Math.ceil(500 * percent) || 1, this);
 
         
 
