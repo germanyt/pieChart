@@ -45,6 +45,21 @@
                 return window.clearTimeout(callback, 1000 / 60);
             };
     })();
+
+    var retinaScale = function(chart){
+        var ctx = chart,
+            width = chart.canvas.width,
+            height = chart.canvas.height;
+
+        if (window.devicePixelRatio) {
+            ctx.canvas.style.width = width + "px";
+            ctx.canvas.style.height = height + "px";
+            ctx.canvas.height = height * window.devicePixelRatio;
+            ctx.canvas.width = width * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+    };
+
 function Pies(elem, data, options){
 
     this.$elem = elem;
@@ -86,6 +101,8 @@ Pies.prototype = {
         this.canvas = canvas;
 
         this.context = canvasDom.getContext('2d');
+
+        retinaScale(this.context);
     },
 
     createTitle: function(){
