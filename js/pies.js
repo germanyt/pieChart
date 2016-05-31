@@ -14,7 +14,10 @@
 
         title: '',
         titleFontSize: 13,
-        titleColor: '#323232'
+        titleColor: '#323232',
+
+        fixed: true,
+        transition: 'ease'
 
     };
 
@@ -63,11 +66,13 @@
 function Pies(elem, data, options){
 
     this.$elem = elem;
-    this.options = $.extend(defaultOptions, options || {}, true);
+    this.options = $.extend(true, {}, defaultOptions, options || {});
+
+    // console.log(this.options);
 
     this.data = data;
 
-
+// console.log(data)
 
     this.init();
 }
@@ -118,7 +123,7 @@ Pies.prototype = {
 
     },
 
-    easeFunction: function(t){
+    ease: function(t){
         if ((t /= 1) < (1 / 2.75)) {
             return 1 * (7.5625 * t * t);
         } else if (t < (2 / 2.75)) {
@@ -130,24 +135,30 @@ Pies.prototype = {
         }
     },
 
-    animationLoop: function(callback,totalSteps,chartInstance){
+    linear: function (t) {
+        return t;
+    },
+
+    animationLoop: function(callback,totalSteps,chartInstance, complete){
 
         var currentStep = 0,
-            easingFunction = this.easeFunction;
+            transitionFunction = this[this.options.transition] || this.ease;
 
         var that = this;
 
         var animationFrame = function(){
             currentStep++;
             var stepDecimal = currentStep/totalSteps;
-            var easeDecimal = easingFunction(stepDecimal);
+            var easeDecimal = transitionFunction(stepDecimal);
 
             callback.call(chartInstance,easeDecimal,stepDecimal, currentStep);
-            // onProgress.call(chartInstance,easeDecimal,stepDecimal);
+
             if (currentStep < totalSteps){
                 chartInstance.animationFrame = requestAnimFrame(animationFrame);
             } else{
                 // onComplete.apply(chartInstance);
+
+                complete && complete(chartInstance);
             }
         };
         requestAnimFrame(animationFrame);
@@ -211,7 +222,10 @@ Pies.prototype = {
             // 旋转至起始角度
             this.context.rotate(eDeg);
             // 移动到终点，准备连接终点与圆心
-            this.context.arc(radius-ringRadius,0,ringRadius,0, Math.PI*2 );
+            // console.log(this.options.fixed);
+            if(this.options.fixed){
+                this.context.arc(radius-ringRadius,0,ringRadius,0, Math.PI*2 );
+            }
             this.context.moveTo(radius,0);
             // 连接到圆心
             this.context.lineTo(0,0);
@@ -221,7 +235,9 @@ Pies.prototype = {
             this.context.rotate(sDeg);
             // 从圆心连接到起点
             this.context.lineTo(radius,0);
-            this.context.arc(radius-ringRadius,0,ringRadius, 0, Math.PI * 2);
+            if(this.options.fixed){
+                this.context.arc(radius-ringRadius,0,ringRadius, 0, Math.PI * 2);
+            }
             this.context.closePath();
             // 还原到最初保存的状态
             this.context.restore();
@@ -277,20 +293,55 @@ Pies.prototype = {
             pat = this.context.createPattern(cvs,"repeat");
         }
 
-        var fixedDeg = Math.asin( this.options.ringLineWidth / 4 / radius ) * 2;
-
-        var percent = this.data.count / this.data.total;
-
-        var endDeg = Math.PI * (2 * percent - .5 );
-
-        var startDeg = -Math.PI /2;
-
-        var nowEndDeg = startDeg;
+        var fixedDeg;
 
         var that = this;
 
+        var dataSet, total, dataItem, fillColor;
 
-        if(this.data.count > 0){
+        var percent, endDeg, startDeg, nowEndDeg;
+
+        var i = 0;
+
+        // console.log(1);
+
+
+        if($.isArray(this.data)){
+            dataSet = [];
+            total = 0;
+            for(var j = 0; j < this.data.length; j++){
+                dataItem = this.data[j];
+                total += dataItem.value;
+
+                dataSet.push({
+                    value: dataItem.value,
+                    color: dataItem.color
+                });
+            }
+        } else {
+            dataSet = [{
+                value: this.data.count,
+                color: pat
+            }];
+
+            total = this.data.total;
+
+            percent = this.data.count / this.data.total;
+
+            endDeg = Math.PI * (2 * percent - .5 );
+        }
+
+
+
+
+        startDeg = -Math.PI /2;
+
+        // nowEndDeg = startDeg;
+
+
+        if(this.data.count > 0 && this.options.fixed){
+
+            fixedDeg = Math.asin( this.options.ringLineWidth / 4 / radius ) * 2
 
             if( endDeg - startDeg > fixedDeg ){
                 startDeg += fixedDeg;
@@ -304,31 +355,74 @@ Pies.prototype = {
             
         }
 
+        // console.log(dataSet);
 
-        this.animationLoop(function(easeDecimal,stepDecimal, currentStep ){
-            this.context.clearRect(0,0,this.slideLength,this.slideLength);
-            var animDecimal = (easeDecimal) ? easeDecimal : 1;
+        var loopDataSet = function(){
+            var self = that;
+            // console.log(i);
+            if(i < dataSet.length){
 
-            nowEndDeg = ((endDeg - nowEndDeg) * animDecimal) + nowEndDeg;
+                percent = dataSet[i].value / total;
 
-            this.context.fillStyle = this.options.fillColor;
-            this.context.beginPath();
-            this.context.arc(radius,radius,radius,0,Math.PI*2);
-            this.context.fill();
+                endDeg = Math.PI * (2 * percent) + startDeg;
 
-            this.context.fillStyle = pat;
-            this.context.beginPath();
-            this.drawSector(startDeg , nowEndDeg);
-            this.context.fill();
+                // console.log(total, percent, startDeg, endDeg);
+
+                dataSet[i].startDeg = startDeg;
+
+                dataSet[i].endDeg = endDeg;
+
+                nowEndDeg = startDeg;
+
+                fillColor = dataSet[i].color;
+
+                self.animationLoop(function(easeDecimal,stepDecimal, currentStep ){
+                    self.context.clearRect(0,0,self.slideLength,self.slideLength);
+                    var animDecimal = (easeDecimal) ? easeDecimal : 1;
+
+                    // console.log(easeDecimal);
+
+                    nowEndDeg = ((endDeg - startDeg) * animDecimal) + startDeg;
+
+                    // console.log(endDeg, nowEndDeg);
+
+                    self.context.fillStyle = this.options.fillColor;
+                    self.context.beginPath();
+                    self.context.arc(radius,radius,radius,0,Math.PI*2);
+                    self.context.fill();
+
+                    for (var n = 0; n < i; n++) {
+                        self.context.fillStyle = dataSet[n].color;
+                        self.context.beginPath();
+                        self.drawSector(dataSet[n].startDeg , dataSet[n].endDeg);
+                        self.context.fill();
+                        self.context.closePath();
+                    }
+
+                    self.context.fillStyle = fillColor;
+                    self.context.beginPath();
+                    self.drawSector(startDeg , nowEndDeg);
+                    self.context.fill();
 
 
 
-            this.context.fillStyle = '#fff';
-            this.context.beginPath();
-            this.context.arc(radius,radius,radius - this.options.ringLineWidth,0,Math.PI*2);
-            this.context.fill();
+                    self.context.fillStyle = '#fff';
+                    self.context.beginPath();
+                    self.context.arc(radius,radius,radius - self.options.ringLineWidth,0,Math.PI*2);
+                    self.context.fill();
 
-        }, Math.ceil(500 * percent) || 1, this);
+                }, Math.ceil(500 * percent) || 1, self, function(){
+                    startDeg = endDeg;
+                    i++;
+
+                    loopDataSet();
+
+                    // console.log('end');
+                });
+            }
+        }
+
+        loopDataSet();
 
         
 

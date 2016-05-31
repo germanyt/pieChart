@@ -20,11 +20,22 @@
 	background-color: #fff;
 	/*border: 1px solid #333;*/
 }
+
+#pies2 {
+	width: 186px;
+	height: 186px;
+
+	margin: 200px auto;
+
+	background-color: #fff;
+}
 	</style>
 </head>
 <body>
 	<div id="pies"></div>
 	<div id="msg"></div>
+
+	<div id="pies2"></div>
 	<script src="js/zepto.js"></script>
 	<script src="js/pies.js"></script>
 
@@ -36,6 +47,30 @@
 		title: '静止人数',
 		textHtml: true,
 		// highLightSecondColor: false
+	});
+	var pie2 = $('#pies2').pies([
+			{
+				value: 20,
+				color: '#328eff'
+			},
+			{
+				value: 8,
+				color: '#8362ff'
+			},
+			{
+				value: 12,
+				color: '#6bce19'
+			},
+			{
+				value: 60,
+				color: '#c0c8cc'
+			}
+		],{
+		title: '静止人数',
+		textHtml: true,
+		highLightSecondColor: false,
+		fixed: false,
+		// transition: 'linear'
 	});
 	</script>
 
